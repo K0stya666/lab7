@@ -1,6 +1,6 @@
 package server.commands;
-import global.facility.Response;
-import global.facility.Route;
+import global.models.Response;
+import global.models.Route;
 
 /**
  * Команда выхода

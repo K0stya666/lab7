@@ -1,44 +1,37 @@
     package server.managers;
 
-    import global.facility.Request;
-    import global.facility.Response;
-    import global.facility.Route;
-    import org.slf4j.Logger;
-    import org.slf4j.LoggerFactory;
-    import server.rulers.CommandManager;
-
+    import global.models.*;
+    import global.models.Route;
+    import org.slf4j.*;
     import java.io.*;
     import java.net.InetSocketAddress;
     import java.nio.ByteBuffer;
-    import java.nio.channels.SelectionKey;
-    import java.nio.channels.Selector;
-    import java.nio.channels.ServerSocketChannel;
-    import java.nio.channels.SocketChannel;
-    import java.util.HashSet;
-    import java.util.Iterator;
-    import java.util.Set;
+    import java.nio.channels.*;
+    import java.util.*;
 
-    public class SocketServer {
-        private static final Logger log = LoggerFactory.getLogger(SocketServer.class);
+    public class TCPServer implements Runnable {
+        private static final Logger LOGGER = LoggerFactory.getLogger(TCPServer.class);
         private final CommandManager commandRuler;
         private Selector selector;
-        private InetSocketAddress address;
-        private Set<SocketChannel> session;
+        private final InetSocketAddress address;
+        private final Set<SocketChannel> session;
 
-        public SocketServer(String host, int port, CommandManager commandRuler) {
+        public TCPServer(String host, int port, CommandManager commandRuler) {
             this.address = new InetSocketAddress(host, port);
             this.session = new HashSet<>();
             this.commandRuler=commandRuler;
         }
 
-        public void start() throws IOException, ClassNotFoundException {
-            this.selector = Selector.open();
-            ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.bind(address);
-            serverSocketChannel.configureBlocking(false);
-            serverSocketChannel.register(this.selector, SelectionKey.OP_ACCEPT);
-
-            log.info("Server started...");
+        @Override
+        public void run() {
+            try {
+                this.selector = Selector.open();
+                ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+                serverSocketChannel.bind(address);
+                serverSocketChannel.configureBlocking(false);
+                serverSocketChannel.register(this.selector, SelectionKey.OP_ACCEPT);
+            } catch (IOException ignored) {}
+            LOGGER.info("Server started...");
             new Thread(() -> {
                 BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
                 while (true) {
@@ -57,7 +50,7 @@
                                 Response serverResponseSave = command.apply(tokens, null);
                                 Response serverResponseExit = exitCommand.apply(tokens , null);
                             }else{
-                                log.warn("Внимание! Введенная вами команда отсутствует в базе сервера. Вам доступны следующие две команы : save , exit. Введите любую из них.");
+                                LOGGER.warn("Внимание! Введенная вами команда отсутствует в базе сервера. Вам доступны следующие две команы : save , exit. Введите любую из них.");
                             }
                         }
                     } catch (IOException e) {
@@ -70,15 +63,17 @@
 
             while(true) {
                 // blocking, wait for events
-                this.selector.select();
-                Iterator keys = this.selector.selectedKeys().iterator();
-                while(keys.hasNext()) {
-                    SelectionKey key = (SelectionKey) keys.next();
-                    keys.remove();
-                    if (!key.isValid()) continue;
-                    if (key.isAcceptable()) accept(key);
-                    else if (key.isReadable()) read(key);
-                }
+                try {
+                    this.selector.select();
+                    Iterator<SelectionKey> keys = this.selector.selectedKeys().iterator();
+                    while (keys.hasNext()) {
+                        SelectionKey key = keys.next();
+                        keys.remove();
+                        if (!key.isValid()) continue;
+                        if (key.isAcceptable()) { accept(key); }
+                        else if (key.isReadable()) { read(key); }
+                    }
+                } catch (IOException ignored) {}
             }
         }
 
@@ -88,7 +83,7 @@
             channel.configureBlocking(false);
             channel.register(this.selector, SelectionKey.OP_READ);
             this.session.add(channel);
-            log.info("Подключился новый пользователь: " + channel.socket().getRemoteSocketAddress() + "\n");
+            LOGGER.info("Подключился новый пользователь: " + channel.socket().getRemoteSocketAddress() + "\n");
         }
 
 
@@ -105,7 +100,7 @@
                 if (numRead == -1) {
                     // Клиент закрыл соединение
                     this.session.remove(channel);
-                    log.info("Пользователь отключился: " + channel.socket().getRemoteSocketAddress() + "\n");
+                    LOGGER.info("Пользователь отключился: " + channel.socket().getRemoteSocketAddress() + "\n");
                     key.cancel();
                     return;
                 }
@@ -126,7 +121,7 @@
                     Request request = (Request) oi.readObject();
                     String gotData = request.getCommandMassage();
                     Route gotRoute = request.getRoute();
-                    log.info("Получено: " + gotData + " | Route:" + gotRoute);
+                    LOGGER.info("Получено: " + gotData + " | Route:" + gotRoute);
 
                     String[] tokens = (gotData.trim() + " ").split(" ", 2);
                     tokens[1] = tokens[1].trim();
@@ -144,10 +139,10 @@
                     Response response = command.apply(tokens , gotRoute);
                     sendAnswer(response, key);
                 } catch (ClassNotFoundException e) {
-                    log.error("Ошибка обработки запроса: " + e.getMessage());
+                    LOGGER.error("Ошибка обработки запроса: " + e.getMessage());
                 } catch (EOFException | StreamCorruptedException e) {
                     // Не удалось десериализовать объект, возможно, не все данные получены
-                    log.error("Получены неполные данные.");
+                    LOGGER.error("Получены неполные данные.");
                 }
             }
         }

@@ -1,36 +1,27 @@
 package server;
 
-import global.tools.Console;
-import global.tools.StandartConsole;
+import global.tools.*;
 import server.commands.*;
-import server.managers.SocketServer;
-import server.rulers.CollectionManager;
-import server.rulers.CommandManager;
-import server.tools.CSVparser;
-
-import java.io.IOException;
+//import server.interstates.UserInterstate60;
+import server.managers.TCPServer;
+import server.managers.CollectionManager;
+import server.managers.CommandManager;
+import static server.managers.Interstate60.createDatabaseIfNotExists;
 
 
 public class Main {
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
-        if (args.length < 2) {
-            System.err.println("Usage: java -jar server.jar <dataFileName> <port>");
-            return;
-        }
+    private final static int PORT = 5432;
 
-        String dataFileName = args[0]; // Имя файла из аргумента
-        int port; // Порт из аргумента
-        try {
-            port = Integer.parseInt(args[1]);
-        } catch (NumberFormatException e) {
-            System.err.println("Error: Port must be an integer.");
-            return;
-        }
-
+    public static void main(String[] args) {
         Console console = new StandartConsole();
-        CSVparser csVparser = new CSVparser(dataFileName, console);
-        CollectionManager collectionManager = new CollectionManager(csVparser);
-        CommandManager commandManager = new CommandManager();
+
+        createDatabaseIfNotExists();
+
+        var commandManager = new CommandManager();
+        var collectionManager = new CollectionManager();
+        //var userInterstate60 = new UserInterstate60();
+
+
         if (!collectionManager.loadCollection()) {
             System.err.println("Error: Collection could not be loaded!");
             return;
@@ -38,7 +29,6 @@ public class Main {
 
         commandManager.register("add", new Add(collectionManager));
         commandManager.register("clear", new Clear(collectionManager));
-        commandManager.register("save", new Save(collectionManager));
         commandManager.register("show", new Show(collectionManager));
         commandManager.register("help", new Help(commandManager));
         commandManager.register("update_by_id", new UpdateById(collectionManager));
@@ -50,7 +40,7 @@ public class Main {
         commandManager.register("remove_by_id", new RemoveById(collectionManager));
         commandManager.register("print_field_ascending_distance", new PrintFieldAsсendingDistance(collectionManager));
 
-        new SocketServer("localhost", port, commandManager).start();
+        new TCPServer("localhost", PORT, commandManager).run();
     }
 }
 

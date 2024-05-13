@@ -1,55 +1,46 @@
 package server.commands;
 
 
-import global.facility.Response;
-import global.facility.Route;
-import server.rulers.CollectionManager;
+import global.models.Response;
+import global.models.Route;
+import server.managers.CollectionManager;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
+/**
+ * Команда, которая выводит информацию о коллекции
+ * @author Kostya666
+ */
 public class Info extends Command {
-    private final CollectionManager collectionRuler;
-    /**
-     * команда выводящая информацию о коллекции
-     */
-    public Info(CollectionManager collectionRuler) {
+    private final CollectionManager collectionManager;
+
+    public Info(CollectionManager collectionManager) {
         super("info", "вывести информацию о коллекции");
 
-        this.collectionRuler = collectionRuler;
+        this.collectionManager = collectionManager;
     }
 
     /**
-     * метод выполняет команду
-     *
-     * @return возвращает сообщение о  успешности выполнения команды
+     * Выполняет команду
+     * @return возвращает сообщение об успешности выполнения команды
      */
     @Override
     public Response apply(String[] arguments , Route ticket) {
         if (!arguments[1].isEmpty()) {
-            //console.println("Неправильное количество аргументов!");
-            //console.println("Использование: '" + getName() + "'");
             return new Response("Неправильное количество аргументов!\nИспользование: '\" + getName() + \"'");
         }
 
-        LocalDateTime lastInitTime = collectionRuler.getLastInitTime();
+        Date lastInitTime = collectionManager.getLastInitTime();
         String lastInitTimeString = (lastInitTime == null) ? "в данной сессии инициализации еще не происходило" :
-                lastInitTime.toLocalDate().toString() + " " + lastInitTime.toLocalTime().toString();
-
-        LocalDateTime lastSaveTime = collectionRuler.getLastSaveTime();
-        String lastSaveTimeString = (lastSaveTime == null) ? "в данной сессии сохранения еще не происходило" :
-                lastSaveTime.toLocalDate().toString() + " " + lastSaveTime.toLocalTime().toString();
+                lastInitTime.toString();
+        
         String s="" ;
         s+="Сведения о коллекции:\n";
-        s+=" Тип: " + collectionRuler.getCollection().getClass().toString();
-        s+=" \nКоличество элементов: " + collectionRuler.getCollection().size();
-        s+=" \nДата последнего сохранения: " + lastSaveTimeString;
+        s+=" Тип: " + collectionManager.getCollection().getClass().toString();
+        s+=" \nКоличество элементов: " + collectionManager.getCollection().size();
         s+=" \nДата последней инициализации: " + lastInitTimeString;
         s+="\n";
-        //console.println("Сведения о коллекции:");
-        //console.println(" Тип: " + collectionRuler.getCollection().getClass().toString());
-        //console.println(" Количество элементов: " + collectionRuler.getCollection().size());
-        //console.println(" Дата последнего сохранения: " + lastSaveTimeString);
-        //console.println(" Дата последней инициализации: " + lastInitTimeString);
         return new Response(s);
     }
 }

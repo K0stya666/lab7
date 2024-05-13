@@ -3,9 +3,9 @@ package client.managers;
 
 import client.commands.ExecuteScript;
 import client.tools.Ask;
-import global.facility.Request;
-import global.facility.Response;
-import global.facility.Route;
+import global.models.Request;
+import global.models.Response;
+import global.models.Route;
 import global.tools.StandartConsole;
 
 import java.io.*;
@@ -15,13 +15,13 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 
-public class SocketClient {
+public class Client {
     StandartConsole console = new StandartConsole();
     private static String host;
     private static int port;
 
     static SocketChannel socketChannel = null;
-    public SocketClient(String host, int port){
+    public Client(String host, int port){
         this.port=port;
         this.host=host;
     }

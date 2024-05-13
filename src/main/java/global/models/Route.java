@@ -1,9 +1,10 @@
-package global.facility;
+package global.models;
 
 import global.tools.Idgenerator;
 import global.tools.Validatable;
-import server.rulers.CollectionManager;
+import server.managers.CollectionManager;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -14,6 +15,7 @@ import java.util.Objects;
 
 public class Route implements Validatable, Serializable, Comparable<Route> {
     private static final Idgenerator idgenerator = new Idgenerator();
+    @Serial
     private static final long serialVersionUID = 5760575944040770153L;
     private static Integer nextId = 1;
 
@@ -25,8 +27,7 @@ public class Route implements Validatable, Serializable, Comparable<Route> {
     private final Location to; //Поле может быть null
     private final float distance;//Значение поля должно быть больше 1
 
-    public Route(String name, Coordinates coordinates, Date creationDate,
-                 Location from, Location to, float distance) {
+    public Route(String name, Coordinates coordinates, Date creationDate, Location from, Location to, float distance) {
         this.id = Math.toIntExact(idgenerator.generateID());
         this.name = name;
         this.coordinates = coordinates;
@@ -36,10 +37,19 @@ public class Route implements Validatable, Serializable, Comparable<Route> {
         this.distance = distance;
     }
 
-    public Route(String name, Coordinates coordinates,
-                 Location from, Location to, float distance) {
+    public Route(String name, Coordinates coordinates, Location from, Location to, float distance) {
         this(name, coordinates, new Date(), from, to, distance);
         this.id = Math.toIntExact(idgenerator.generateID());
+    }
+
+    public Route (int id, String name, Coordinates coordinates, Date creationDate, Location from, Location to, float distance) {
+        this.id = id;
+        this.name = name;
+        this.coordinates = coordinates;
+        this.creationDate = creationDate;
+        this.from = from;
+        this.to = to;
+        this.distance = distance;
     }
 
     public static void updateNextId(CollectionManager collectionManager) {

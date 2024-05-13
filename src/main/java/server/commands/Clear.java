@@ -1,9 +1,12 @@
 package server.commands;
 
-import global.facility.Response;
-import global.facility.Route;
-import server.rulers.CollectionManager;
+import global.models.Response;
+import global.models.Route;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import server.managers.CollectionManager;
 
+import java.util.List;
 import java.util.Stack;
 
 /**
@@ -12,6 +15,7 @@ import java.util.Stack;
 public class Clear extends Command {
 
     private final CollectionManager collectionManager;
+    private final Logger LOGGER = LoggerFactory.getLogger(Clear.class);
 
     public Clear(CollectionManager collectionManager) {
         super("clear", "очистить коллекцию");
@@ -28,18 +32,8 @@ public class Clear extends Command {
         if(!arguments[1].isEmpty()){
             return new Response("Неправильное количество аргументов!\nИспользование: '" + getName() + "'");
         }
-
-
-
-        var isFirst = true;
-        Stack<Route> stack = collectionManager.getCollection();
-        while (!stack.isEmpty()) {
-            var route1 = stack.pop();
-            collectionManager.remove(route1.getId());
-            collectionManager.addLog("remove " + route1.getId(), isFirst);
-            isFirst = false;
-        }
-
+        List<Route> collection = collectionManager.getCollection();
+        collection.clear();
         collectionManager.update();
         return new Response("Коллекция очищена");
     }

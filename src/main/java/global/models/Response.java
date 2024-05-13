@@ -1,4 +1,4 @@
-package global.facility;
+package global.models;
 
 import java.io.Serializable;
 

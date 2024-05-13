@@ -1,8 +1,8 @@
 package server.commands;
 
-import global.facility.Response;
-import global.facility.Route;
-import server.rulers.CommandManager;
+import global.models.Response;
+import global.models.Route;
+import server.managers.CommandManager;
 
 /**
  * команда выводящая все доступные команды

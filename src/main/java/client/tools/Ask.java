@@ -1,8 +1,8 @@
 package client.tools;
 
-import global.facility.Coordinates;
-import global.facility.Location;
-import global.facility.Route;
+import global.models.Coordinates;
+import global.models.Location;
+import global.models.Route;
 import global.tools.Console;
 
 import java.util.NoSuchElementException;

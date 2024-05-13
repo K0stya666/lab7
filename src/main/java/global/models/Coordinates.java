@@ -1,4 +1,4 @@
-package global.facility;
+package global.models;
 
 
 import global.tools.Validatable;
@@ -21,6 +21,13 @@ public class Coordinates implements Validatable, Serializable {
             try { this.x = Float.parseFloat(s.split(";")[0]); } catch (NumberFormatException ignored) {}
             try { this.y = Float.parseFloat(s.split(";")[1]); } catch (NumberFormatException ignored) {}
         } catch (ArrayIndexOutOfBoundsException ignored) {}
+    }
+
+    public Float getX() {
+        return x;
+    }
+    public Float getY() {
+        return y;
     }
 
     @Override

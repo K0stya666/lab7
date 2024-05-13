@@ -1,4 +1,4 @@
-package global.facility;
+package global.models;
 
 
 import global.tools.Validatable;
@@ -22,6 +22,16 @@ public class Location implements Validatable, Serializable {
             try { this.x = Long.parseLong(s.split(";")[0]); } catch (NumberFormatException ignored) {}
             try { this.y = Integer.parseInt(s.split(";")[1]); } catch (NumberFormatException ignored) {}
         } catch (ArrayIndexOutOfBoundsException ignored) {}
+    }
+
+    public Long getX() {
+        return x;
+    }
+    public Integer getY() {
+        return y;
+    }
+    public String getName() {
+        return name;
     }
 
     @Override

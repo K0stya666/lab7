@@ -1,10 +1,10 @@
 package client.commands;
 
-import client.managers.SocketClient;
-import global.facility.Coordinates;
-import global.facility.Location;
-import global.facility.Request;
-import global.facility.Route;
+import client.managers.Client;
+import global.models.Coordinates;
+import global.models.Location;
+import global.models.Request;
+import global.models.Route;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,7 +46,7 @@ public class ExecuteScript {
                         org[n] = line;
                     }
                 }
-                SocketClient.sendRequest(new Request(mainCommand, new Route(org[0], // name
+                Client.sendRequest(new Request(mainCommand, new Route(org[0], // name
                         new Coordinates(Float.parseFloat(org[1]), Float.parseFloat(org[2])), // coordinates
                         new Date(), // creationDate (assuming current date is the creation date)
                         new Location(Long.parseLong(org[3]), Integer.parseInt(org[4]), org[5]), // from
@@ -70,7 +70,7 @@ public class ExecuteScript {
                         }
                     }
                 } else {
-                    SocketClient.sendRequest(new Request(line, null), socketChannel);
+                    Client.sendRequest(new Request(line, null), socketChannel);
                 }
             }
         }

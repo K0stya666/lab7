@@ -1,9 +1,9 @@
 package server.commands;
 
 import global.exeptions.NotFoundException;
-import global.facility.Response;
-import global.facility.Route;
-import server.rulers.CollectionManager;
+import global.models.Response;
+import global.models.Route;
+import server.managers.CollectionManager;
 
 /**
  * команда обновляющая значение элемента коллекции, id которого равен заданному
@@ -34,15 +34,12 @@ public class UpdateById extends Command{
             collectionManager.remove(deletable.getId());
             Route a =  ticket;
             if(a!= null&&a.validate()){
-                collectionManager.add(a);
-                //console.println("Ticket добавлен!");
+                //collectionManager.add(a);
                 return new Response("Route добавлен!");
             }else{
-                //console.printError("Поля Ticket не валидны! Ticket не создан!");
                 return new Response("Поля Route не валидны! Route не создан!");
             }
         }catch(NotFoundException e){
-            //console.printError("Продукта с таким ID в коллекции нет!");
             return new Response("Продукта с таким ID в коллекции нет!");
         }
     }

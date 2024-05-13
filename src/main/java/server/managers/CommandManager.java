@@ -1,4 +1,4 @@
-package server.rulers;
+package server.managers;
 
 import server.commands.Command;
 

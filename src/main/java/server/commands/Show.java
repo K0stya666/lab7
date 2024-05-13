@@ -1,8 +1,8 @@
 package server.commands;
 
-import global.facility.Response;
-import global.facility.Route;
-import server.rulers.CollectionManager;
+import global.models.Response;
+import global.models.Route;
+import server.managers.CollectionManager;
 
 /**
  * команда выводящая в стандартный поток вывода все элементы коллекции в строковом представлении
