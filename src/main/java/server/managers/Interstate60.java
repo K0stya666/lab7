@@ -2,7 +2,6 @@ package server.managers;
 
 import global.models.*;
 import org.slf4j.*;
-//import server.interstates.*;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
@@ -13,6 +12,7 @@ import java.util.Date;
  * @author Kostya666
  */
 public class Interstate60 {
+    private static int currentUserId = 1;
 //    private static final UserInterstate60 userInterstate60 = new UserInterstate60();
 //    private static final Interstate60 interstate60 = new Interstate60();
     private static final Logger LOGGER = LoggerFactory.getLogger(Interstate60.class);
@@ -32,11 +32,23 @@ public class Interstate60 {
             "to_name, " +
             "to_x, " +
             "to_y, " +
-            "distance, " +
-            "user_id) " +
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-    private static final String SELECT_ALL_ROUTES_SQL = "SELECT * FROM routes";
-    private static final String REMOVE_ROUTES_SQL = "DELETE FROM routes WHERE id = ?";
+            "distance) " +
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?)"; // убрал один ? и user_id
+    private static final String CREATE_ROUTES_TABLE_SQL = "CREATE TABLE IF NOT EXISTS routes (" +
+            "id SERIAL PRIMARY KEY," +
+            "name TEXT NOT NULL CHECK (name <> '')," +
+            "coordinate_x FLOAT NOT NULL," +
+            "coordinate_y FLOAT NOT NULL," +
+            "creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+            "from_name VARCHAR(502) NOT NULL," +
+            "from_x BIGINT NOT NULL," +
+            "from_y INT NOT NULL," +
+            "to_name VARCHAR(502) NOT NULL," +
+            "to_x BIGINT NOT NULL," +
+            "to_y INT NOT NULL," +
+            "distance FLOAT CHECK (distance > 1))";
+            //"user_id INT,)";  // FOREIGN KEY (user_id) REFERENCES users(id)) дописать
+
     private static final String UPDATE_ROUTES_SQL = "UPDATE routes SET " +
             "name = ?, " +
             "coordinate_x = ?, " +
@@ -50,6 +62,16 @@ public class Interstate60 {
             "to_y = ?, " +
             "distance = ? " +
             "WHERE id = ?";
+    private static final String SELECT_ALL_ROUTES_SQL = "SELECT * FROM routes";
+    private static final String REMOVE_ROUTES_SQL = "DELETE FROM routes WHERE id = ?";
+
+    private static final String INSERT_USERS = "INSERT INTO users (" +
+            "username, " +
+            "password_hash, " +
+            "salt, " +
+            "registration_date, " +
+            "last_login_date";
+
     private static final String CREATE_USER_TABLE = "CREATE TABLE IF NOT EXISTS users (" +
             "id SERIAL PRIMARY KEY," +
             "username VARCHAR(50) UNIQUE NOT NULL," +
@@ -57,21 +79,7 @@ public class Interstate60 {
             "salt VARCHAR(32) NOT NULL," +
             "registration_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
             "last_login_date TIMESTAMP)";
-    private static final String CREATE_ROUTES_TABLE_SQL = "CREATE TABLE IF NOT EXISTS routes (" +
-            "id SERIAL PRIMARY KEY," +
-            "name TEXT NOT NULL CHECK (name <> '')," +
-            "coordinate_x FLOAT NOT NULL," +
-            "coordinate_y FLOAT NOT NULL," +
-            "creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
-            "from_name VARCHAR(502) NOT NULL," +
-            "from_x BIGINT NOT NULL," +
-            "from_y INT NOT NULL," +
-            "to_name VARCHAR(502) NOT NULL," +
-            "to_x BIGINT NOT NULL," +
-            "to_y INT NOT NULL," +
-            "distance FLOAT CHECK (distance > 1)," +
-            "user_id INT," +
-            "FOREIGN KEY (user_id) REFERENCES users(id))";
+
 
     /**
      * Добавить новый маршрут в БД
@@ -81,6 +89,7 @@ public class Interstate60 {
     public int addRoute(Route route, int userId) {
         try (Connection connection = getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(INSERT_ROUTES_SQL, Statement.RETURN_GENERATED_KEYS)) {
+                //if (!userExists(connection, userId)) return -1;
                 setAttributes(statement, route, userId);
 
                 int rowsAffected = statement.executeUpdate();
@@ -94,7 +103,7 @@ public class Interstate60 {
                 }
             }
         } catch (SQLException e) {
-            LOGGER.error("Error adding route.");
+            LOGGER.error("Error adding route.", e.getMessage());
         }
         return -1;
     }
@@ -190,6 +199,19 @@ public class Interstate60 {
                 return;
             }
             statement.executeUpdate(CREATE_ROUTES_TABLE_SQL);
+
+            //
+//            Statement statement1 = connection.createStatement();
+//            statement1.executeUpdate("insert into users (username, password_hash, salt) values ('huesos', '1234', '1234')");
+
+//            (" +
+//            "id SERIAL PRIMARY KEY," +
+//                    "username VARCHAR(50) UNIQUE NOT NULL," +
+//                    "password_hash VARCHAR(256) NOT NULL," +
+//                    "salt VARCHAR(32) NOT NULL," +
+//                    "registration_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+//                    "last_login_date TIMESTAMP)";
+            //
         } catch (SQLException e) {
             LOGGER.error("Error creating statement", e);
         }
@@ -200,6 +222,17 @@ public class Interstate60 {
      * @param connection подключение
      */
     public static void createUsersTable(Connection connection) {
+
+        //String USER_CHECK_SQL = "SELECT * FROM users WHERE id = 1"; // <-------------рудимент
+//        String ADD_ONE_USER_SQL = "INSERT INTO users (" +
+//                "id, " +
+//                "username, " +
+//                "password_hash, " +
+//                "salt, " +
+//                "registration_date, " +
+//                "last_login_date)" +
+//                "VALUES (666, 'Virodok', '123', 'salt', '2022-05-25 13:45:00')";
+
         try {
             Statement statement = connection.createStatement();
             if (statement == null) {
@@ -207,6 +240,15 @@ public class Interstate60 {
                 return;
             }
             statement.executeUpdate(CREATE_USER_TABLE);
+
+//            if (currentUserId <= 1) {
+//                PreparedStatement preparedStatement = connection.prepareStatement(ADD_ONE_USER_SQL);
+//                //ResultSet resultSet = statement.
+//                currentUserId += 1;
+//                preparedStatement.executeUpdate(ADD_ONE_USER_SQL);
+//            }
+
+
         } catch (SQLException e) {
             LOGGER.error("Error creating statement", e);
         }
@@ -264,7 +306,7 @@ public class Interstate60 {
         statement.setLong(9, route.getTo().getX());
         statement.setInt(10, route.getTo().getY());
         statement.setFloat(11, route.getDistance());
-        statement.setInt(12, userId);
+        //statement.setInt(12, userId);
     }
 
     /**
@@ -308,4 +350,18 @@ public class Interstate60 {
     private static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL, USER, PASSWORD);
     }
+
+
+//    private boolean userExists(Connection connection, int userId) throws SQLException {
+//        String checkUserSQL = "SELECT COUNT(*) FROM users WHERE user_id = ?";
+//        try (PreparedStatement statement = connection.prepareStatement(checkUserSQL)) {
+//            statement.setInt(1, userId);
+//            try (ResultSet resultSet = statement.executeQuery()) {
+//                return resultSet.next();
+//            }
+//        } catch (SQLException e) {
+//            LOGGER.error("Error checking if user exists", e);
+//        }
+//        return false;
+//    }
 }

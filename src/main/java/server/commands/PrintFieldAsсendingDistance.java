@@ -27,11 +27,6 @@ public class PrintFieldAsсendingDistance extends Command{
         }
 
         var collection = collectionManager.getCollection();
-//        LinkedList<Float> res = new LinkedList<>();
-//        for (var e : collection) {
-//            res.add(e.getDistance());
-//        }
-//         return new Response(collection.toString());
 
         List<Float> res = collection.stream()
                 .map(e -> e.getDistance())

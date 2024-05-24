@@ -27,8 +27,9 @@ public class Add extends Command{
         if(!arguments[1].isEmpty()){
             return new Response("Неправильное количество аргументов!\n" + "Использование: '" + getName() + "'" );
         }
-        if(route != null && route.validate()){
-            //collectionManager.add(route);
+
+       if(route != null && route.validate()){
+            collectionManager.add(route, 666);  // добавить userId
             return new Response("Route добавлен!");
         }else{
             return new Response("Поля Route не валидны! Route не создан!");

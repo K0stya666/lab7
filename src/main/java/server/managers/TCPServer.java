@@ -9,28 +9,26 @@
     import java.nio.channels.*;
     import java.util.*;
 
-    public class TCPServer implements Runnable {
+    public class TCPServer {
         private static final Logger LOGGER = LoggerFactory.getLogger(TCPServer.class);
-        private final CommandManager commandRuler;
+        private final CommandManager commandManager;
         private Selector selector;
         private final InetSocketAddress address;
         private final Set<SocketChannel> session;
 
-        public TCPServer(String host, int port, CommandManager commandRuler) {
+        public TCPServer(String host, int port, CommandManager commandManager) {
             this.address = new InetSocketAddress(host, port);
             this.session = new HashSet<>();
-            this.commandRuler=commandRuler;
+            this.commandManager = commandManager;
         }
 
-        @Override
-        public void run() {
-            try {
-                this.selector = Selector.open();
-                ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-                serverSocketChannel.bind(address);
-                serverSocketChannel.configureBlocking(false);
-                serverSocketChannel.register(this.selector, SelectionKey.OP_ACCEPT);
-            } catch (IOException ignored) {}
+        public void start() throws IOException, ClassNotFoundException {
+            this.selector = Selector.open();
+            ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+            serverSocketChannel.bind(address);
+            serverSocketChannel.configureBlocking(false);
+            serverSocketChannel.register(this.selector, SelectionKey.OP_ACCEPT);
+
             LOGGER.info("Server started...");
             new Thread(() -> {
                 BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
@@ -41,8 +39,8 @@
                         String[] tokens = (input.trim() + " ").split(" ", 2);
                         tokens[1] = tokens[1].trim();
                         String executingCommand = tokens[0];
-                        var command = commandRuler.getCommands().get("save");
-                        var exitCommand = commandRuler.getCommands().get("exit");
+                        var command = commandManager.getCommands().get("save");
+                        var exitCommand = commandManager.getCommands().get("exit");
                         if (executingCommand.equals("save")) {
                             Response serverResponse = command.apply(tokens,null);
                         }else{
@@ -63,17 +61,15 @@
 
             while(true) {
                 // blocking, wait for events
-                try {
-                    this.selector.select();
-                    Iterator<SelectionKey> keys = this.selector.selectedKeys().iterator();
-                    while (keys.hasNext()) {
-                        SelectionKey key = keys.next();
-                        keys.remove();
-                        if (!key.isValid()) continue;
-                        if (key.isAcceptable()) { accept(key); }
-                        else if (key.isReadable()) { read(key); }
-                    }
-                } catch (IOException ignored) {}
+                this.selector.select();
+                Iterator keys = this.selector.selectedKeys().iterator();
+                while(keys.hasNext()) {
+                    SelectionKey key = (SelectionKey) keys.next();
+                    keys.remove();
+                    if (!key.isValid()) continue;
+                    if (key.isAcceptable()) accept(key);
+                    else if (key.isReadable()) read(key);
+                }
             }
         }
 
@@ -81,11 +77,10 @@
             ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
             SocketChannel channel = serverSocketChannel.accept();
             channel.configureBlocking(false);
-            channel.register(this.selector, SelectionKey.OP_READ);
-            this.session.add(channel);
-            LOGGER.info("Подключился новый пользователь: " + channel.socket().getRemoteSocketAddress() + "\n");
+            channel.register(key.selector(), SelectionKey.OP_READ);
+            session.add(channel);
+            LOGGER.info("Подключился новый пользователь: {}\n", channel.socket().getRemoteSocketAddress());
         }
-
 
         private void read(SelectionKey key) throws IOException {
             SocketChannel channel = (SocketChannel) key.channel();
@@ -126,8 +121,8 @@
                     String[] tokens = (gotData.trim() + " ").split(" ", 2);
                     tokens[1] = tokens[1].trim();
                     String executingCommand = tokens[0];
-                    commandRuler.addToHistory(executingCommand);
-                    var command = commandRuler.getCommands().get(executingCommand);
+                    commandManager.addToHistory(executingCommand);
+                    var command = commandManager.getCommands().get(executingCommand);
 //                    if (executingCommand.equals("reconect")){
 //                        return;
 //                    }

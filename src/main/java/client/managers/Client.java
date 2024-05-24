@@ -14,19 +14,22 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Scanner;
+import java.util.concurrent.ForkJoinPool;
 
-public class Client {
+public class Client extends Thread {
     StandartConsole console = new StandartConsole();
     private static String host;
     private static int port;
+    private ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
     static SocketChannel socketChannel = null;
     public Client(String host, int port){
-        this.port=port;
-        this.host=host;
+        this.port = port;
+        this.host = host;
     }
 
-    public void start() throws Exception {
+    @Override
+    public void run() {
         boolean connected = false;
 
 
@@ -70,22 +73,23 @@ public class Client {
 
             if (command1.equals("reconect")) {
                 console.println("Обычные люди учатся на своих ошибках, но только БОГИ способны учиться на ошибка чужих.");
-
             }
 
+            try {
+                if (command1.equals("add") || command1.equals("update") || command1.equals("add_if_min")) {
+                    Route route = Ask.askRoute(console);
+                    Request request = new Request(command, route);
 
-            if (command1.equals("add") || command1.equals("update") || command1.equals("add_if_min")) {
-                Route route = Ask.askRoute(console);
-                Request request = new Request(command, route);
-                sendRequest(request, socketChannel);
-            } else if (command1.equals("execute_script")) {
-                ExecuteScript.execute(command, socketChannel);
-            } else if(!command1.equals("save")){
-                Request request = new Request(command, null);
-                sendRequest(request, socketChannel);
-            }
+                    //Re
 
-
+                    sendRequest(request, socketChannel);
+                } else if (command1.equals("execute_script")) {
+                    ExecuteScript.execute(command, socketChannel);
+                } else if(!command1.equals("save")){
+                    Request request = new Request(command, null);
+                    sendRequest(request, socketChannel);
+                }
+            } catch (Exception ignored) {}
         }
     }
 

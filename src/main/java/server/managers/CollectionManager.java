@@ -2,7 +2,6 @@ package server.managers;
 
 import global.models.Route;
 import org.slf4j.*;
-//import server.interstates.Interstate60;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -17,9 +16,10 @@ public class CollectionManager {
     private final List<Route> collection = new LinkedList<>();
     private final Interstate60 interstate60;
     private final ReentrantLock lock = new ReentrantLock();
-    private Date lastInitTime;
+    private Date lastSaveTime;
 
     public CollectionManager() {
+        this.lastSaveTime = null;
         this.interstate60 = new Interstate60();
         this.loadCollection();
         update();
@@ -35,7 +35,7 @@ public class CollectionManager {
             update();
         }
 
-    public Date getLastInitTime() { return lastInitTime; }
+    public Date getLastSaveTime() { return lastSaveTime; }
 
     /**
      * @return коллекция
@@ -60,16 +60,16 @@ public class CollectionManager {
     /**
      * Добавляет Route
      */
-    public boolean add(Route route, int userId) {
+    public Integer add(Route route, int userId) {
         try {
             lock.lock();
             int newId = interstate60.addRoute(route, userId);
-            if (newId < 0 || collection.stream().anyMatch(r -> r.equals(route))) return false;
+            if (newId < 0) return -1;
             route.setId(newId);
             routes.put(newId, route);
             collection.add(route);
             update();
-            return true;
+            return newId;
         } finally {
             lock.unlock();
         }

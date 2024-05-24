@@ -24,12 +24,6 @@ public class PrintAscending extends Command{
             return new Response("Неправильное количество аргументов!" +
                     "\nИспользование: '" + getName() + "'");
         }
-//        var collection = collectionManager.getCollection();
-//        LinkedList<Route> newCollection = new LinkedList<>();
-//        for (var e : collection) {
-//            newCollection.add(e);
-//        }
-//        return new Response(newCollection.toString());
 
         LinkedList<Route> newCollection = collectionManager
                 .getCollection()

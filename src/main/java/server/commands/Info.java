@@ -31,9 +31,9 @@ public class Info extends Command {
             return new Response("Неправильное количество аргументов!\nИспользование: '\" + getName() + \"'");
         }
 
-        Date lastInitTime = collectionManager.getLastInitTime();
-        String lastInitTimeString = (lastInitTime == null) ? "в данной сессии инициализации еще не происходило" :
-                lastInitTime.toString();
+        Date lastSaveTime = collectionManager.getLastSaveTime();
+        String lastInitTimeString = (lastSaveTime == null) ? "в данной сессии инициализации еще не происходило" :
+                lastSaveTime.toString();
         
         String s="" ;
         s+="Сведения о коллекции:\n";

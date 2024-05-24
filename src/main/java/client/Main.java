@@ -4,7 +4,7 @@ import client.managers.Client;
 
 public class Main {
     private static final String HOST = "localhost";
-    private static final int PORT = 5432;
+    private static final int PORT = 4093;
 
     public static void main(String[] args) {
         try {

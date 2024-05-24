@@ -1,6 +1,8 @@
 package global.models;
 
 import java.io.Serializable;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.RecursiveTask;
 
 public class Request implements Serializable {
     private static final long serialVersionUID = 5760575944040770153L;
@@ -14,11 +16,6 @@ public class Request implements Serializable {
         return commandMassage;
     }
 
-    @Override
-    public String toString(){
-        return commandMassage;
-    }
-
     public Request(String commandMassage, Route route){
         this.commandMassage=commandMassage;
         this.route = route;
@@ -26,5 +23,10 @@ public class Request implements Serializable {
 
     public Route getRoute(){
         return route;
+    }
+
+    @Override
+    public String toString(){
+        return commandMassage;
     }
 }

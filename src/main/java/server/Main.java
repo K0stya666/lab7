@@ -1,26 +1,27 @@
 package server;
 
-import global.tools.*;
 import server.commands.*;
 //import server.interstates.UserInterstate60;
+import server.managers.Interstate60;
 import server.managers.TCPServer;
 import server.managers.CollectionManager;
 import server.managers.CommandManager;
+
+import java.io.IOException;
+
 import static server.managers.Interstate60.createDatabaseIfNotExists;
 
 
 public class Main {
-    private final static int PORT = 5432;
+    private final static int PORT = 4093;
 
     public static void main(String[] args) {
-        Console console = new StandartConsole();
 
         createDatabaseIfNotExists();
 
         var commandManager = new CommandManager();
-        var collectionManager = new CollectionManager();
-        //var userInterstate60 = new UserInterstate60();
-
+        var interstate60 = new Interstate60();
+        var collectionManager = new CollectionManager(interstate60);
 
         if (!collectionManager.loadCollection()) {
             System.err.println("Error: Collection could not be loaded!");
@@ -40,7 +41,9 @@ public class Main {
         commandManager.register("remove_by_id", new RemoveById(collectionManager));
         commandManager.register("print_field_ascending_distance", new PrintFieldAsсendingDistance(collectionManager));
 
-        new TCPServer("localhost", PORT, commandManager).run();
+        try {
+            new TCPServer("localhost", PORT, commandManager).start();
+        } catch (IOException | ClassNotFoundException e) {}
     }
 }
 
