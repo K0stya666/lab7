@@ -5,7 +5,7 @@ import org.slf4j.*;
 import server.managers.CollectionManager;
 
 /**
- * Команда 'remove_head'. Удаляет последний элемент коллекции.
+ * Команда удаления последнего элемента коллекции
  * @author Kostya666
  */
 public class RemoveHead extends Command {
@@ -13,7 +13,7 @@ public class RemoveHead extends Command {
     private final Logger LOGGER = LoggerFactory.getLogger(RemoveHead.class);
 
     public RemoveHead(CollectionManager collectionManager) {
-        super("remove_head", "вывести первый элемент коллекции и удалить его");
+        super(Commands.REMOVE_HEAD, "вывести первый элемент коллекции и удалить его");
         this.collectionManager = collectionManager;
     }
 
@@ -21,11 +21,12 @@ public class RemoveHead extends Command {
      * Выполняет команду
      * @return успешность выполнения команды.
      */
-    public Response apply(String[] args, Route route) {
-        if (!args[1].isEmpty()) {
+    @Override
+    public Response execute(Request request) {
+        if (request.getArgs().length != 1) {
             return new Response(
                     "Неправильное количество аргументов!\nИспользование: " +
-                            "'" + getName() + "'");
+                            "'" + getCommandName() + "'");
         }
         try {
             var collection = collectionManager.getCollection();

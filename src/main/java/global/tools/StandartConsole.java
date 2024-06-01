@@ -1,5 +1,6 @@
 package global.tools;
 
+import java.util.Objects;
 import java.util.Scanner;
 /**
  * Класс реализации методов интерфеса консоли
@@ -7,7 +8,7 @@ import java.util.Scanner;
 public class StandartConsole implements Console {
     private static final String P = "$ ";
     private static Scanner fileScanner = null;
-    private static Scanner defScanner = new Scanner(System.in);
+    private static final Scanner defScanner = new Scanner(System.in);
     /**
      * консоль делает System.out.println(obj)
      */
@@ -22,17 +23,13 @@ public class StandartConsole implements Console {
     public void print(Object obj){
         System.out.print(obj);
     }
+
     /**
-     * консоль считывает команду которую мы вводим
+     * Консоль считывает команду которую мы вводим
      */
     @Override
     public String readln() {
-        if (fileScanner != null){
-            return fileScanner.nextLine();
-        }
-        else {
-            return defScanner.nextLine();
-        }
+        return Objects.requireNonNullElse(fileScanner, defScanner).nextLine().trim();
     }
     /**
      * консоль выводит ошибку

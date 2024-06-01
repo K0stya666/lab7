@@ -4,13 +4,15 @@ import global.models.Coordinates;
 import global.models.Location;
 import global.models.Route;
 import global.tools.Console;
+import global.tools.StandartConsole;
 
 import java.util.NoSuchElementException;
 
 public class Ask {
     public static class AskBreak extends Exception {}
+    public static Console console = new StandartConsole();
 
-    public static Route askRoute(Console console) throws AskBreak {
+    public static Route askRoute() throws AskBreak {
         Coordinates coordinates = askCoordinates(console);
         try {
             String nameFrom;

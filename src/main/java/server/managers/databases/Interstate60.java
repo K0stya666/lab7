@@ -1,7 +1,9 @@
-package server.managers;
+package server.managers.databases;
 
 import global.models.*;
 import org.slf4j.*;
+import server.utility.User;
+
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
@@ -12,9 +14,6 @@ import java.util.Date;
  * @author Kostya666
  */
 public class Interstate60 {
-    private static int currentUserId = 1;
-//    private static final UserInterstate60 userInterstate60 = new UserInterstate60();
-//    private static final Interstate60 interstate60 = new Interstate60();
     private static final Logger LOGGER = LoggerFactory.getLogger(Interstate60.class);
 
     private static final String DB_URL = "jdbc:postgresql://localhost:5432/studs";
@@ -32,8 +31,9 @@ public class Interstate60 {
             "to_name, " +
             "to_x, " +
             "to_y, " +
-            "distance) " +
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?)"; // убрал один ? и user_id
+            "distance, " +
+            "user_id) " +
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?, ?)"; // убрал один ? и user_id
     private static final String CREATE_ROUTES_TABLE_SQL = "CREATE TABLE IF NOT EXISTS routes (" +
             "id SERIAL PRIMARY KEY," +
             "name TEXT NOT NULL CHECK (name <> '')," +
@@ -46,8 +46,8 @@ public class Interstate60 {
             "to_name VARCHAR(502) NOT NULL," +
             "to_x BIGINT NOT NULL," +
             "to_y INT NOT NULL," +
-            "distance FLOAT CHECK (distance > 1))";
-            //"user_id INT,)";  // FOREIGN KEY (user_id) REFERENCES users(id)) дописать
+            "distance FLOAT CHECK (distance > 1))" +
+            "user_id INT FOREIGN KEY (user_id) REFERENCES users(id))";  // FOREIGN KEY (user_id) REFERENCES users(id)) дописать
 
     private static final String UPDATE_ROUTES_SQL = "UPDATE routes SET " +
             "name = ?, " +
@@ -83,30 +83,39 @@ public class Interstate60 {
 
     /**
      * Добавить новый маршрут в БД
-     * @param route добавляемый маршрут
-     * @param userId id пользователя, добавляющего маршрут
+     * @param route  добавляемый маршрут
+     * @param user пользователь
      */
-    public int addRoute(Route route, int userId) {
+    public void addRoute(Route route, User user) {
         try (Connection connection = getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(INSERT_ROUTES_SQL, Statement.RETURN_GENERATED_KEYS)) {
-                //if (!userExists(connection, userId)) return -1;
+                var userId = UserManager.getUserId(user);
                 setAttributes(statement, route, userId);
 
                 int rowsAffected = statement.executeUpdate();
                 if (rowsAffected > 0) {
                     ResultSet generatedKeys = statement.getGeneratedKeys();
                     if (generatedKeys.next()) {
-                        return generatedKeys.getInt(1);
+                        generatedKeys.getInt(1);
                     } else {
                         LOGGER.error("Failed to retrieve generated keys after adding route");
                     }
                 }
             }
         } catch (SQLException e) {
-            LOGGER.error("Error adding route.", e.getMessage());
+            LOGGER.error("Error adding route.");
         }
-        return -1;
     }
+
+//    public int addUser(String username, String passHash, String salt) {
+//        try (Connection connection = getConnection()) {
+//            try (PreparedStatement statement = connection.prepareStatement(INSERT_USERS, Statement.RETURN_GENERATED_KEYS)) {
+//
+//            }
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        }
+//
 
     /**
      * Добавляет коллекцию маршрутов в БД
@@ -306,7 +315,7 @@ public class Interstate60 {
         statement.setLong(9, route.getTo().getX());
         statement.setInt(10, route.getTo().getY());
         statement.setFloat(11, route.getDistance());
-        //statement.setInt(12, userId);
+        statement.setInt(12, userId);
     }
 
     /**

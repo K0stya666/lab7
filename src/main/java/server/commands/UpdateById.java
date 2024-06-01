@@ -1,40 +1,38 @@
 package server.commands;
 
 import global.exeptions.NotFoundException;
-import global.models.Response;
-import global.models.Route;
+import global.models.*;
 import server.managers.CollectionManager;
 
 /**
- * команда обновляющая значение элемента коллекции, id которого равен заданному
+ * Команда обновления значения элемента коллекции, id которого равен заданному
+ * @author Kostya666
  */
 public class UpdateById extends Command{
-
     private final CollectionManager collectionManager;
 
     public UpdateById(CollectionManager collectionManager){
-        super("update_by_id" , "обновить значение элемента коллекции, id которого равен заданному");
-
-        this.collectionManager=collectionManager;
+        super(Commands.UPDATE_BY_ID , "обновить значение элемента коллекции, id которого равен заданному");
+        this.collectionManager = collectionManager;
     }
+
     /**
-     * метод выполняет команду
-     *
-     * @return возвращает сообщение о  успешности выполнения команды
+     * Выполняет команду
+     * @return возвращает сообщение об успешности выполнения команды
      */
     @Override
-    public Response apply(String[] arguments , Route ticket) {
-        if(arguments[1].isEmpty()){
-            return new Response("Неправильное количество аргументов!\n" + "Использование: '" + getName() + "'" );
+    public Response execute(Request request) {
+        if(request.getArgs().length != 2){
+            return new Response("Неправильное количество аргументов!\n" + "Использование: '" + getCommandName() + "'" );
         }
+
         try{
-            long deletableId= Long.parseLong(arguments[1]);
+            long deletableId= Long.parseLong(request.getArgs()[1]); // LOOOOOONG
             var deletable= collectionManager.byId((int) deletableId);
             if (deletable == null) throw new NotFoundException();
             collectionManager.remove(deletable.getId());
-            Route a =  ticket;
-            if(a!= null&&a.validate()){
-                //collectionManager.add(a);
+            Route a = request.getRoute();
+            if(a != null && a.validate()){
                 return new Response("Route добавлен!");
             }else{
                 return new Response("Поля Route не валидны! Route не создан!");

@@ -1,43 +1,37 @@
 package server.commands;
 
+import global.models.Request;
 import global.models.Response;
-import global.models.Route;
 import server.managers.CommandManager;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 /**
- * команда выводящая последние 13 использованных команд
+ * Команда вывода последних 13 использованных команд
  */
-public class History extends Command{
+public class History extends Command {
     private final CommandManager commandManager;
 
     public History( CommandManager commandRuler) {
-        super("history", "вывести последние 13 комманд");
+        super(Commands.HISTORY, "вывести последние 13 команд");
         this.commandManager = commandRuler;
     }
+
     /**
-     * метод выполняет команду
-     *
-     * @return возвращает сообщение о  успешности выполнения команды
+     * Выполняет команду
+     * @return возвращает сообщение об успешности выполнения команды
      */
     @Override
-    public Response apply(String[] arguments , Route ticket){
-        if (!arguments[1].isEmpty()) {
+    public Response execute(Request request){
+        if (request.getArgs().length != 1) {
 
             return new Response("Неправильное количество аргументов!\nИспользование: '\" + getName() + \"'");
         }
 
-        List<String> myHistory = new ArrayList<>(commandManager.getCommandHistory()); // Создаем копию CommandHistory
-        int startIndex = Math.max(0, myHistory.size() - 13); // Начальный индекс для вывода последних 13 команд
-        List<String> last13Commands = myHistory.subList(startIndex, myHistory.size()); // Получаем последние 13 команд
-
-
-        String stringHistory = last13Commands.stream()
-                .collect(Collectors.joining("\n"));
-        return new Response(stringHistory);
+//        List<String> myHistory = new ArrayList<>(commandManager.getCommandHistory().toString()); // Создаем копию CommandHistory
+//        int startIndex = Math.max(0, myHistory.size() - 13); // Начальный индекс для вывода последних 13 команд
+//        List<String> last13Commands = myHistory.subList(startIndex, myHistory.size()); // Получаем последние 13 команд
+//        String stringHistory = String.join("\n", last13Commands);
+//        return new Response(stringHistory);
+        return new Response("");
     }
 
 }

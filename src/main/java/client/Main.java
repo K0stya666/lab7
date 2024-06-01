@@ -1,18 +1,16 @@
 package client;
 
 import client.managers.Client;
+import client.tools.Ask;
+
+import java.io.IOException;
 
 public class Main {
+    private static final int PORT = 4129;
     private static final String HOST = "localhost";
-    private static final int PORT = 4093;
 
-    public static void main(String[] args) {
-        try {
-            Client client = new Client(HOST, PORT);
-            client.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Ошибка при запуске клиента: " + e.getMessage());
-        }
+    public static void main(String[] args) throws Ask.AskBreak, IOException, ClassNotFoundException, InterruptedException {
+        Client client = new Client(HOST, PORT);
+        client.start();
     }
 }

@@ -1,31 +1,27 @@
 package server.commands;
 
-import global.models.Response;
-import global.models.Route;
+import global.models.*;
 import server.managers.CollectionManager;
 
 /**
- * команда выводящая в стандартный поток вывода все элементы коллекции в строковом представлении
+ * Команда вывода в стандартный поток всех элементов коллекции в строковом представлении
+ * @author Kostya666
  */
 public class Show extends Command {
-
     private final CollectionManager collectionManager;
 
     public Show(CollectionManager collectionManager) {
-        super("show", "вывести в стандартный поток вывода все элементы коллекции в строковом представлении");
+        super(Commands.SHOW, "вывести в стандартный поток вывода все элементы коллекции в строковом представлении");
         this.collectionManager = collectionManager;
-        this.console = console;
-
     }
 
     /**
-     * метод выполняет команду
-     *
-     * @return возвращает сообщение о успешности выполнения команды
+     * Выполняет команду
+     * @return возвращает сообщение об успешности выполнения команды
      */
     @Override
-    public Response apply(String[] arguments, Route ticket) {
-        if (!arguments[1].isEmpty()) {
+    public Response execute(Request request) {
+        if (request.getArgs().length != 1) {
             return new Response("Неправильное количество " +
                     "аргументов!\nИспользование: '\" + getName() + \"'");
         }

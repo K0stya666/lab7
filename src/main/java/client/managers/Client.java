@@ -1,187 +1,196 @@
-
 package client.managers;
 
-import client.commands.ExecuteScript;
-import client.tools.Ask;
-import global.models.Request;
-import global.models.Response;
-import global.models.Route;
-import global.tools.StandartConsole;
-
+import global.models.*;
+import global.tools.*;
+import global.tools.Console;
+import server.utility.User;
+import server.commands.Commands;
+import server.managers.CommandManager;
+import static server.commands.Commands.*;
+import static client.tools.Ask.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.Scanner;
-import java.util.concurrent.ForkJoinPool;
+import java.security.NoSuchAlgorithmException;
+import java.util.Iterator;
+import java.util.Set;
 
-public class Client extends Thread {
-    StandartConsole console = new StandartConsole();
-    private static String host;
-    private static int port;
-    private ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
+/**
+ * Класс для подключения клиента к серверу
+ * @author Kostya666
+ */
+public class Client {
+    private static final Console console = new StandartConsole();
+    private static final CommandManager commandManager = new CommandManager();
+    private static InetSocketAddress address;
+    private static SocketChannel channel = null;
+    private static Selector selector;
+    private static User user;
+    public static boolean isLoggedIn = false;
 
-    static SocketChannel socketChannel = null;
-    public Client(String host, int port){
-        this.port = port;
-        this.host = host;
+    public Client(String host, int port) throws IOException {
+        address = new InetSocketAddress(host, port);
+        selector = Selector.open();
     }
 
-    @Override
-    public void run() {
-        boolean connected = false;
+    public void start() throws AskBreak, IOException, ClassNotFoundException, InterruptedException {
+        connectToServer();
+        clientAuthorization();
 
+        while (console.isCanReadln()) {
 
-        // Попытка подключения с задержкой
-        while (!connected) {
+            var input = console.readln().split(" ", 2);
+            var commandName = input[0];
+
+//            var input = console.readln();
+//            var commandName = input;
+
+            var request = new Request(input, user);
+            var command = commandManager.getCommand(commandName);
+
+            switch (Commands.valueOf(commandName.toUpperCase())) {
+                case EXIT:
+                    console.println("Завершение работы");
+                    try {
+                        channel.close();
+                        command.execute(request);
+                    } catch (IOException | ClassNotFoundException | InterruptedException e) {
+                        console.printError("Ошибка при закрытии соединения");
+                    }
+                    break;
+                case ADD, UPDATE_BY_ID:
+                    var route = askRoute();
+                    request = new Request(input, route, user);
+                    sendRequest(request);
+                    break;
+                case EXECUTE_SCRIPT:
+                    command.execute(request);
+                    break;
+                default:
+                    sendRequest(request);
+            }
+        }
+    }
+
+    private void connectToServer() throws InterruptedException {
+        while (!isConnected()) {
             try {
-                socketChannel = SocketChannel.open();
-                socketChannel.connect(new InetSocketAddress(host, port));
-                socketChannel.configureBlocking(false);
-                connected = true; // Успешное подключение
+                channel = SocketChannel.open();
+                channel.configureBlocking(false);
+                channel.connect(address);
+                channel.register(selector, SelectionKey.OP_CONNECT);
+
+                while (true) {
+                    selector.select();
+                    Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+                    while (keys.hasNext()) {
+                        SelectionKey key = keys.next();
+                        keys.remove();
+                        if (key.isConnectable()) {
+                            channel = (SocketChannel) key.channel();
+//                            if (channel.isConnected()) {
+//                                key.interestOps(SelectionKey.OP_READ);
+//                                console.println("Подключение к серверу установлено");
+//                                return;
+//                            }
+                            if (channel.finishConnect()) {
+                                key.interestOps(SelectionKey.OP_READ);
+                                console.println("Подключение к серверу установлено");
+                                return;
+                            }
+                        }
+                    }
+                }
             } catch (IOException e) {
-                console.println("Не удалось подключиться к серверу. Попробуйте снова через 6,66 секунд...");
-                try {
-                    Thread.sleep(5000); // Задержка перед следующей попыткой
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                }
+                console.printError("Неудачная попытка подключения <ERROR 666>");
+                Thread.sleep(5000);
             }
-        }
-
-        console.println("Подключение к серверу успешно установлено.");
-        Scanner scanner = new Scanner(System.in);
-        while (scanner.hasNextLine()) {
-            String command = scanner.nextLine().trim();
-            String[] tokens = (command.trim() + " ").split(" ", 2);
-            String command1 = tokens[0];
-
-            if (command1.equals("exit")) {
-                console.println("Завершение сеанса");
-                try {
-                    socketChannel.close();
-                } catch (IOException e) {
-                    console.println("Ошибка при закрытии соединения: " + e.getMessage());
-                }
-                System.exit(1);
-            }
-
-            if (command1.equals("save")) {
-                console.println("Вам недоступна данная команда");
-            }
-
-            if (command1.equals("reconect")) {
-                console.println("Обычные люди учатся на своих ошибках, но только БОГИ способны учиться на ошибка чужих.");
-            }
-
-            try {
-                if (command1.equals("add") || command1.equals("update") || command1.equals("add_if_min")) {
-                    Route route = Ask.askRoute(console);
-                    Request request = new Request(command, route);
-
-                    //Re
-
-                    sendRequest(request, socketChannel);
-                } else if (command1.equals("execute_script")) {
-                    ExecuteScript.execute(command, socketChannel);
-                } else if(!command1.equals("save")){
-                    Request request = new Request(command, null);
-                    sendRequest(request, socketChannel);
-                }
-            } catch (Exception ignored) {}
         }
     }
 
-    public static void sendRequest(Request request , SocketChannel channel) throws IOException, ClassNotFoundException, InterruptedException {
-        try {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutputStream.writeObject(request);
-            objectOutputStream.close();
-            ByteBuffer buffer = ByteBuffer.wrap(byteArrayOutputStream.toByteArray());
-
-            while (buffer.hasRemaining()) {
-                channel.write(buffer);
-            }
-            System.out.println(getAnswer(channel));
-        } catch (IOException e) {
-            System.out.println("Не удалось отправить запрос: " + e.getMessage());
-            System.err.println("Сервер временно недоступен. reconect(перепоключение)!!!!");
-            connectToServer();
-
-        }
-    }
-
-    private static void connectToServer() {
-        boolean connected = false;
-        // Попытка подключения с задержкой
-        while (!connected) {
+    private void clientAuthorization() throws IOException, ClassNotFoundException, InterruptedException {
+        console.println("Пожалуйста войдите в учётную запись или зарегистрируйтесь");
+        while (!isLoggedIn) {
             try {
-                if (socketChannel != null && socketChannel.isOpen()) {
-                    socketChannel.close();  // Закрываем предыдущий канал, если он открыт
+                var input = console.readln().split(" ", 3);
+                var commandName  = input[0];
+                var userName = input[1];
+                var password = input[2];
+                user = new User(userName, password);
+                if (!SIGNUP.equals(commandName) && !LOGIN.equals(commandName)) {
+                    console.println("Для использования команд вам необходимо авторизоваться");
+                    console.println("Используйте команду 'signup' или 'login'");
+                } else {
+                    var request = new Request(input, user);
+                    sendRequest(request);
+                    isLoggedIn = true;
+                    //console.println("Вы зашли под именем: " + userName);
                 }
-                socketChannel = SocketChannel.open();
-                socketChannel.connect(new InetSocketAddress(host, port));
-                socketChannel.configureBlocking(false);
-                connected = true; // Успешное подключение
-                System.out.println("успешное подключение");
+            } catch (NoSuchAlgorithmException | ClassNotFoundException | InterruptedException e) {
+                console.printError("Ошибка авторизации пользователя");
             } catch (IOException e) {
-                System.err.println("Не удалось подключиться к серверу. 0 нет, о нет, о нет.........");
-                try {
-                    Thread.sleep(5000); // Задержка перед следующей попыткой
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
+                console.printError("Проблемы с подключением к серверу. Попытка переподключиться...");
+                connectToServer();
+            }
+            console.println(getAnswer());
+        }
+    }
+
+    public static void sendRequest(Request request) throws ClassNotFoundException, InterruptedException, IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(request);
+        oos.flush();
+
+        byte[] requestData = baos.toByteArray();
+        ByteBuffer buffer = ByteBuffer.wrap(requestData);
+        channel.write(buffer);
+    }
+
+    public Response getAnswer() throws IOException, ClassNotFoundException {
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        channel.configureBlocking(false);
+        //selector.wakeup();
+        channel.register(selector, SelectionKey.OP_READ);
+
+        while (true) {
+            int readyChannels = selector.select();
+            if (readyChannels == 0) continue;
+
+            Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
+
+            while (keyIterator.hasNext()) {
+                SelectionKey key = keyIterator.next();
+                keyIterator.remove();
+
+                if (key.isReadable()) {
+                    channel = (SocketChannel) key.channel();
+                    int bytesRead = channel.read(buffer);
+
+                    if (bytesRead == -1) {
+                        key.cancel();
+                        channel.close();
+                        return null;
+                    }
+
+                    buffer.flip();
+                    baos.write(buffer.array(), 0, bytesRead);
+                    buffer.clear();
+
+                    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
+                    return (Response) ois.readObject();
                 }
             }
         }
     }
 
-    public static Object getAnswer(SocketChannel channel) throws IOException, ClassNotFoundException, InterruptedException {
-        Selector selector = Selector.open();
-        channel.register(selector, channel.validOps());
-        ByteBuffer buffer = ByteBuffer.allocate(1024); // Меньший размер буфера для частых проверок
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        long startTime = System.currentTimeMillis();
-
-        while (System.currentTimeMillis() - startTime < 10000) {
-            int readyChannels = selector.select(1000); // Таймаут для select, чтобы не блокировать навсегда
-
-            if (readyChannels == 0) {
-                continue;
-            }
-
-            while (true) {
-                int bytesRead = channel.read(buffer);
-                if (bytesRead == -1) {
-                    break; // Конец потока данных
-                }
-                if (bytesRead == 0) {
-                    break; // Нет доступных данных для чтения
-                }
-
-                buffer.flip();
-                byteArrayOutputStream.write(buffer.array(), 0, buffer.limit());
-                buffer.clear();
-            }
-
-            byte[] responseBytes = byteArrayOutputStream.toByteArray();
-            if (responseBytes.length > 0) {
-                try (ObjectInputStream oi = new ObjectInputStream(new ByteArrayInputStream(responseBytes))) {
-                    Response answer = (Response) oi.readObject();
-                    return answer.getMessage();
-                } catch (EOFException | StreamCorruptedException e) {
-                    // Не удалось десериализовать объект, возможно, не все данные получены
-                    // Продолжаем чтение данных
-                }
-            }
-        }
-        return null;
+    private boolean isConnected() {
+        return channel != null && channel.isConnected();
     }
-
-
-
-
 }

@@ -1,17 +1,10 @@
 package global.models;
 
-import global.tools.Idgenerator;
-import global.tools.Validatable;
+import global.tools.*;
 import server.managers.CollectionManager;
-
-import java.io.Serial;
-import java.io.Serializable;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Objects;
+import java.io.*;
+import java.text.*;
+import java.util.*;
 
 public class Route implements Validatable, Serializable, Comparable<Route> {
     private static final Idgenerator idgenerator = new Idgenerator();
@@ -26,6 +19,7 @@ public class Route implements Validatable, Serializable, Comparable<Route> {
     private final Location from; //Поле не может быть null
     private final Location to; //Поле может быть null
     private final float distance;//Значение поля должно быть больше 1
+    private int userId;
 
     public Route(String name, Coordinates coordinates, Date creationDate, Location from, Location to, float distance) {
         this.id = Math.toIntExact(idgenerator.generateID());
@@ -88,6 +82,8 @@ public class Route implements Validatable, Serializable, Comparable<Route> {
     public String getName() {
         return name;
     }
+
+    public void setUserId(int userId) { this.userId = userId; }
 
     public static Route fromArray(String[] r) {
         Integer id;

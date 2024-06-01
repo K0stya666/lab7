@@ -1,28 +1,26 @@
 package server.commands;
 
-import global.models.Response;
-import global.models.Route;
+import global.models.*;
 import server.managers.CollectionManager;
-
 import java.util.LinkedList;
 import java.util.stream.Collectors;
 
 /**
- * Команда, которая выводит элементы коллекции в порядке возрастания.
+ * Команда вывода элементов коллекции в порядке возрастания
  * @author Kostya666
  */
 public class PrintAscending extends Command{
     private final CollectionManager collectionManager;
 
     public PrintAscending(CollectionManager collectionManager) {
-        super("print_ascending","вывести элементы коллекции в порядке возрастания");
+        super(Commands.PRINT_ASCENDING,"вывести элементы коллекции в порядке возрастания");
         this.collectionManager = collectionManager;
     }
 
-    public Response apply(String[] args, Route route) {
-        if (!args[1].isEmpty()) {
+    public Response execute(Request request) {
+        if (request.getArgs().length != 1) {
             return new Response("Неправильное количество аргументов!" +
-                    "\nИспользование: '" + getName() + "'");
+                    "\nИспользование: '" + getCommandName() + "'");
         }
 
         LinkedList<Route> newCollection = collectionManager

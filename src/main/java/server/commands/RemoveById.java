@@ -1,43 +1,39 @@
 package server.commands;
 
 import global.exeptions.NotFoundException;
+import global.models.Request;
 import global.models.Response;
-import global.models.Route;
 import server.managers.CollectionManager;
 
 /**
- * команда удаляющая элемент из коллекции по его id
+ * Команда удаления элемента из коллекции по его id
+ * @author Kostya666
  */
 public class RemoveById extends Command {
-    private final CollectionManager collectionRuler;
+    private final CollectionManager collectionManager;
 
-
-    public RemoveById(CollectionManager collectionRuler) {
-        super("remove_by_id", "удалить элемент из коллекции по его id");
-
-        this.collectionRuler = collectionRuler;
+    public RemoveById(CollectionManager collectionManager) {
+        super(Commands.REMOVE_BY_ID, "удалить элемент из коллекции по его id");
+        this.collectionManager = collectionManager;
     }
+
     /**
-     * метод выполняет команду
-     *
-     * @return возвращает сообщение о  успешности выполнения команды
+     * Выполняет команду
+     * @return возвращает сообщение об успешности выполнения команды
      */
     @Override
-    public Response apply(String[] arguments , Route ticket){
-        if(arguments[1].isEmpty()){
-            //console.println("Неправильное количество аргументов!");
-            //console.println("Использование: '" + getName() + "'");
-            return new Response("Неправильное количество аргументов!\n" + "Использование: '" + getName() + "'" );
+    public Response execute(Request request){
+        if(request.getArgs().length != 2){
+            return new Response("Неправильное количество аргументов!\n" + "Использование: '" + getCommandName() + "'" );
         }
         try{
-            long deletableId= Long.parseLong(arguments[1]);
-            var deletable= collectionRuler.byId((int) deletableId);
+            long deletableId= Long.parseLong(request.getArgs()[1]); //LOOOOOONG
+            var deletable= collectionManager.byId((int) deletableId);
             if (deletable == null) throw new NotFoundException();
-            collectionRuler.remove(deletable.getId());
+            collectionManager.remove(deletable.getId());
             return new Response("Route удалён");
         }catch(NotFoundException e){
-            //console.printError("Продукта с таким ID в коллекции нет!");
-            return new Response("Продукта с таким ID в коллекции нет!");
+            return new Response("Продукта с таким id в коллекции нет!");
         }
     }
 }

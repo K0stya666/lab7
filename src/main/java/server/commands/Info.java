@@ -1,23 +1,19 @@
 package server.commands;
 
-
+import global.models.Request;
 import global.models.Response;
-import global.models.Route;
 import server.managers.CollectionManager;
-
-import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
- * Команда, которая выводит информацию о коллекции
+ * Команда выводит информации о коллекции
  * @author Kostya666
  */
 public class Info extends Command {
     private final CollectionManager collectionManager;
 
     public Info(CollectionManager collectionManager) {
-        super("info", "вывести информацию о коллекции");
-
+        super(Commands.INFO, "вывести информацию о коллекции");
         this.collectionManager = collectionManager;
     }
 
@@ -26,8 +22,8 @@ public class Info extends Command {
      * @return возвращает сообщение об успешности выполнения команды
      */
     @Override
-    public Response apply(String[] arguments , Route ticket) {
-        if (!arguments[1].isEmpty()) {
+    public Response execute(Request request) {
+        if (request.getArgs().length != 1) {
             return new Response("Неправильное количество аргументов!\nИспользование: '\" + getName() + \"'");
         }
 

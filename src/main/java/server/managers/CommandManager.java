@@ -1,11 +1,9 @@
 package server.managers;
 
 import server.commands.Command;
+import server.commands.Commands;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CommandManager {
     protected final Map<String, Command> commands = new LinkedHashMap<>();
@@ -16,8 +14,8 @@ public class CommandManager {
      * @param commandName Название команды.
      * @param command Команда.
      */
-    public void register(String commandName, Command command) {
-        commands.put(commandName, command);
+    public void register(Commands commandName, Command command) {
+        commands.put(commandName.toString(), command);
     }
 
     /**
@@ -26,6 +24,8 @@ public class CommandManager {
     public Map<String, Command> getCommands() {
         return commands;
     }
+
+    public Command getCommand(String commandName) { return commands.get(commandName); }
 
     /**
      * @return История команд.

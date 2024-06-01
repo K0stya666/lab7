@@ -2,6 +2,9 @@ package server.managers;
 
 import global.models.Route;
 import org.slf4j.*;
+import server.managers.databases.Interstate60;
+import server.utility.User;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -13,6 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class CollectionManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(CollectionManager.class);
     private final Map<Integer, Route> routes = new HashMap<>();
+    private final Map<Route, Integer> userIdMap = new HashMap<>();
     private final List<Route> collection = new LinkedList<>();
     private final Interstate60 interstate60;
     private final ReentrantLock lock = new ReentrantLock();
@@ -57,19 +61,33 @@ public class CollectionManager {
         }
     }
 
+//    public Integer add(Route route, int userId) {
+//        try {
+//            lock.lock();
+//            int newId = interstate60.addRoute(route, userId);
+//            if (newId < 0) return -1;
+//            route.setId(newId);
+//            routes.put(newId, route);
+//            collection.add(route);
+//            update();
+//            return newId;
+//        } finally {
+//            lock.unlock();
+//        }
+//    }
+
     /**
      * Добавляет Route
+     * @param route маршрут
+     * @param user пользователь
      */
-    public Integer add(Route route, int userId) {
+    public void add(Route route, User user) {
         try {
             lock.lock();
-            int newId = interstate60.addRoute(route, userId);
-            if (newId < 0) return -1;
-            route.setId(newId);
-            routes.put(newId, route);
+            interstate60.addRoute(route, user);
             collection.add(route);
+            userIdMap.put(route, user.getId());
             update();
-            return newId;
         } finally {
             lock.unlock();
         }

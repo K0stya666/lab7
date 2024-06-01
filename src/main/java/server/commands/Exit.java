@@ -1,27 +1,26 @@
 package server.commands;
+import global.models.Request;
 import global.models.Response;
-import global.models.Route;
 
 /**
  * Команда выхода
+ * @author Kostya666
  */
 public class Exit extends Command  {
 
-
     public Exit(){
-        super("exit","завершить программу");
+        super(Commands.EXIT,"завершить программу");
     }
+
     /**
-     * Метод выполняет команду
-     *
+     * Выполняет команду
      * @return возвращает сообщение об успешности выполнения команды
      */
     @Override
-    public Response apply(String[] arguments , Route ticket){
-        if(!arguments[1].isEmpty()){
-            return new Response("Неправильное количество аргументов!\nИспользование: '" + getName() + "'");
+    public Response execute(Request request){
+        if (!(request.getArgs().length == 1)){
+            return new Response("Неправильное количество аргументов!\nИспользование: '" + getCommandName() + "'");
         }
-
         System.exit(1);
         return new Response("завершение программы");
     }
