@@ -61,6 +61,19 @@ public class CollectionManager {
         }
     }
 
+    /**
+     *
+     * @param id
+     */
+    public void removeById(Integer id) {
+        try {
+            lock.lock();
+            routes.remove(id);
+            collection.remove(byId(id));
+            interstate60.
+        }
+    }
+
 //    public Integer add(Route route, int userId) {
 //        try {
 //            lock.lock();
@@ -86,6 +99,7 @@ public class CollectionManager {
             lock.lock();
             interstate60.addRoute(route, user);
             collection.add(route);
+            routes.put(route.getId(), route);
             userIdMap.put(route, user.getId());
             update();
         } finally {
@@ -153,6 +167,17 @@ public class CollectionManager {
      */
     public void update() {
         Collections.sort(collection);
+    }
+
+    public void clear() {
+        try {
+            lock.lock();
+            collection.clear();
+            routes.clear();
+            interstate60.clearRoutes();
+        } finally {
+            lock.unlock();
+        }
     }
 
     public boolean loadCollection() {

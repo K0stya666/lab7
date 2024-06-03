@@ -138,6 +138,7 @@ public class Client {
 
     private void clientAuthorization() throws IOException, ClassNotFoundException, InterruptedException {
         console.println("Пожалуйста войдите в учётную запись или зарегистрируйтесь");
+        //var isLoggedIn = user.isAuthorized();
         while (!isLoggedIn) {
             try {
                 var input = console.readln().split(" ", 3);
@@ -175,7 +176,7 @@ public class Client {
         //selector.wakeup();
         forkJoinPool.submit(() -> {
             try {
-                console.println(Objects.requireNonNull(getAnswer()).getMessage());
+                console.println(getAnswer());
             } catch (IOException | ClassNotFoundException e) {
                 console.printError("Ошибка при получении ответа");
             }

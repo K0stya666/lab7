@@ -19,11 +19,20 @@ public class User implements Serializable {
     private final String password;
     private String salt;
     private Date lastLoginDate;
+    private boolean isAuthorized;
 
     public User(String userName, String password) throws NoSuchAlgorithmException {
         this.userName = userName;
         this.password = password;
         this.lastLoginDate = new Date();
+        salt = generateSalt();
+        //MessageDigest =
+    }
+    public User(String userName, String password, boolean isAuthorized) throws NoSuchAlgorithmException {
+        this.userName = userName;
+        this.password = password;
+        this.lastLoginDate = new Date();
+        this.isAuthorized = isAuthorized;
     }
 
     public int getId() { return id; }
@@ -31,11 +40,12 @@ public class User implements Serializable {
     public String getPassword() { return password; }
     public String getSalt() { return salt; }
     public Date getlastLoginDate() { return lastLoginDate; }
+    public boolean isAuthorized() { return isAuthorized; }
 
     public void setId(int id) {
         this.id = id;
     }
-    public void setSalt(String salt) { this.salt = salt; }
+    //public void setSalt(String salt) { this.salt = salt; }
     public void setLastLoginDate(Date lastLoginDate) { this.lastLoginDate = lastLoginDate; }
 
     /**

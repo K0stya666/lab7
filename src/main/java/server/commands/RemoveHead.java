@@ -31,9 +31,10 @@ public class RemoveHead extends Command {
         try {
             var collection = collectionManager.getCollection();
             int length = collection.size();
-            int id = collectionManager.getCollection().get(length - 1).getId();
-            collection.remove(id);
-            LOGGER.info("remove " + id, true);
+            int id = collectionManager.getCollection().get(0).getId();
+            //collection.remove(id);
+            collectionManager.remove(id);
+            LOGGER.info("remove {}", id);
             collectionManager.update();
             return new Response("Маршрут успешно удалён");
         } catch (ArrayIndexOutOfBoundsException ignored) {}

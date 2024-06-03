@@ -64,6 +64,7 @@ public class Interstate60 {
             "WHERE id = ?";
     private static final String SELECT_ALL_ROUTES_SQL = "SELECT * FROM routes";
     private static final String REMOVE_ROUTES_SQL = "DELETE FROM routes WHERE id = ?";
+    private static final String DELETE_ROUTES_SQL = "DELETE FROM routes";
 
     private static final String INSERT_USERS = "INSERT INTO users (" +
             "username, " +
@@ -92,11 +93,13 @@ public class Interstate60 {
                 var userId = UserManager.getUserId(user);
                 setAttributes(statement, route, userId);
 
+
                 int rowsAffected = statement.executeUpdate();
                 if (rowsAffected > 0) {
                     ResultSet generatedKeys = statement.getGeneratedKeys();
                     if (generatedKeys.next()) {
-                        generatedKeys.getInt(1);
+                        int routeId = generatedKeys.getInt(1);
+                        route.setId(routeId);
                     } else {
                         LOGGER.error("Failed to retrieve generated keys after adding route");
                     }
@@ -182,6 +185,15 @@ public class Interstate60 {
         }
     }
 
+    public void clearRoutes() {
+        try (Connection connection = getConnection()) {
+            PreparedStatement statement = connection.prepareStatement(DELETE_ROUTES_SQL);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            LOGGER.error("Error while clearing routes");
+        }
+    }
+
     public static void createDatabaseIfNotExists() {
         try (Connection connection = getConnection()) {
             if (connection != null) {
@@ -192,7 +204,7 @@ public class Interstate60 {
             }
             createTablesIfNotExists(connection);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            LOGGER.error("Error while creating the database.");
         }
     }
 

@@ -22,7 +22,7 @@ public class Login extends Command {
      */
     @Override
     public Response execute(Request request) {
-        if (request.getArgs().length != 3) return new Response("Неправильное количество аргументов.\\nИспользование: '\" + getName() + \"'");
+        if (request.getArgs().length != 3) return new Response("Неправильное количество аргументов.\nИспользование: '" + getCommandName() + "'");
 //        var username = request.getArgs()[0];
 //        var password = request.getArgs()[1];
         var user = request.getUser();

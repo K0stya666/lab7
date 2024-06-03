@@ -28,7 +28,7 @@ public class Help extends Command {
 
         StringBuilder result = new StringBuilder();
         commandManager.getCommands().values().forEach(command -> {
-            result.append(command.getCommandName()).append(" : ").append(command.getDescription()).append("\n\n");
+            result.append(command.getCommandName()).append(" : ").append(command.getDescription()).append("\n");
         });
         return new Response(result.toString());
     }

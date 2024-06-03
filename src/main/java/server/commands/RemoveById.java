@@ -26,13 +26,13 @@ public class RemoveById extends Command {
         if(request.getArgs().length != 2){
             return new Response("Неправильное количество аргументов!\n" + "Использование: '" + getCommandName() + "'" );
         }
-        try{
-            long deletableId= Long.parseLong(request.getArgs()[1]); //LOOOOOONG
-            var deletable= collectionManager.byId((int) deletableId);
+        try {
+            int deletableId = Integer.parseInt(request.getArgs()[1]);
+            var deletable = collectionManager.byId(deletableId);
             if (deletable == null) throw new NotFoundException();
             collectionManager.remove(deletable.getId());
             return new Response("Route удалён");
-        }catch(NotFoundException e){
+        } catch(NotFoundException e){
             return new Response("Продукта с таким id в коллекции нет!");
         }
     }

@@ -47,7 +47,7 @@ public class Main {
 
         try {
             new TCPServer(HOST, PORT, commandManager).start();
-        } catch (IOException | ClassNotFoundException e) {}
+        } catch (IOException | ClassNotFoundException ignored) {}
     }
 }
 
