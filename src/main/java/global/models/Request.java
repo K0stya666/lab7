@@ -66,8 +66,8 @@ public class Request implements Serializable {
 //        return route;
 //    }
 //
-//    @Override
-//    public String toString(){
-//        return arg;
-//    }
+    @Override
+    public String toString(){
+        return "Request [commandName=" + commandName + ", args=(" + args[0] + "," + args[1] + ")]";
+    }
 }

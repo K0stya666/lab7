@@ -29,15 +29,13 @@ public class Main {
             return;
         }
 
-        //while (!UserManager.authorized) {
         commandManager.register(SIGNUP, new Signup(userManager));
         commandManager.register(LOGIN, new Login(userManager));
-        //}
 
         commandManager.register(ADD, new Add(collectionManager));
         commandManager.register(CLEAR, new Clear(collectionManager));
         commandManager.register(SHOW, new Show(collectionManager));
-        commandManager.register(SHOW, new Help(commandManager));
+        commandManager.register(HELP, new Help(commandManager));
         commandManager.register(UPDATE_BY_ID, new UpdateById(collectionManager));
         commandManager.register(HISTORY, new History(commandManager));
         commandManager.register(EXIT, new Exit());

@@ -16,7 +16,9 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Класс для подключения клиента к серверу
@@ -24,16 +26,18 @@ import java.util.Set;
  */
 public class Client {
     private static final Console console = new StandartConsole();
-    private static final CommandManager commandManager = new CommandManager();
+    private final CommandManager commandManager;
     private static InetSocketAddress address;
     private static SocketChannel channel = null;
     private static Selector selector;
     private static User user;
     public static boolean isLoggedIn = false;
+    private static final ForkJoinPool forkJoinPool = new ForkJoinPool();
 
-    public Client(String host, int port) throws IOException {
+    public Client(String host, int port, CommandManager commandManager) throws IOException {
         address = new InetSocketAddress(host, port);
         selector = Selector.open();
+        this.commandManager = commandManager;
     }
 
     public void start() throws AskBreak, IOException, ClassNotFoundException, InterruptedException {
@@ -49,33 +53,54 @@ public class Client {
 //            var commandName = input;
 
             var request = new Request(input, user);
-            var command = commandManager.getCommand(commandName);
 
-            switch (Commands.valueOf(commandName.toUpperCase())) {
-                case EXIT:
-                    console.println("Завершение работы");
-                    try {
-                        channel.close();
+            try {
+                switch (Commands.valueOf(commandName.toUpperCase())) {
+                    case EXIT:
+                        console.println("Завершение работы");
+                        try {
+                            channel.close();
+                            var command = commandManager.getCommand(commandName);
+                            command.execute(request);
+                            //System.exit(0);
+                        } catch (IOException | ClassNotFoundException | InterruptedException e) {
+                            console.printError("Ошибка при закрытии соединения");
+                        }
+                        break;
+                    case ADD, UPDATE_BY_ID:
+                        var route = askRoute();
+                        request = new Request(input, route, user);
+                        sendRequest(request);
+//                        forkJoinPool.submit(() -> {
+//                            try {
+//                                console.println(getAnswer());
+//                            } catch (IOException | ClassNotFoundException e) {
+//                                console.printError("Ошибка при получении ответа");
+//                            }
+//                        });
+                        //console.println(getAnswer());
+                        break;
+                    case EXECUTE_SCRIPT:
+                        var command = commandManager.getCommand(commandName);
                         command.execute(request);
-                    } catch (IOException | ClassNotFoundException | InterruptedException e) {
-                        console.printError("Ошибка при закрытии соединения");
-                    }
-                    break;
-                case ADD, UPDATE_BY_ID:
-                    var route = askRoute();
-                    request = new Request(input, route, user);
-                    sendRequest(request);
-                    break;
-                case EXECUTE_SCRIPT:
-                    command.execute(request);
-                    break;
-                default:
-                    sendRequest(request);
+                        break;
+                    default:
+                        sendRequest(request);
+//                        forkJoinPool.submit(() -> {
+//                            try {
+//                                console.println(getAnswer());
+//                            } catch (IOException | ClassNotFoundException e) {
+//                                console.printError("Ошибка при получении ответа");
+//                            }
+//                        });
+                }
+            } catch (IllegalArgumentException e) {
+                console.printError("Такой команды не существует. Введите команду 'help' или почините свои кривые руки");
             }
         }
     }
 
-    private void connectToServer() throws InterruptedException {
+    private void connectToServer() throws InterruptedException, IOException, ClassNotFoundException {
         while (!isConnected()) {
             try {
                 channel = SocketChannel.open();
@@ -129,13 +154,12 @@ public class Client {
                     isLoggedIn = true;
                     //console.println("Вы зашли под именем: " + userName);
                 }
-            } catch (NoSuchAlgorithmException | ClassNotFoundException | InterruptedException e) {
-                console.printError("Ошибка авторизации пользователя");
+            } catch (NoSuchAlgorithmException | ClassNotFoundException | InterruptedException | ArrayIndexOutOfBoundsException e) {
+                console.printError("Ошибка авторизации пользователя. Данная команда не является командлетой");
             } catch (IOException e) {
                 console.printError("Проблемы с подключением к серверу. Попытка переподключиться...");
                 connectToServer();
             }
-            console.println(getAnswer());
         }
     }
 
@@ -148,17 +172,28 @@ public class Client {
         byte[] requestData = baos.toByteArray();
         ByteBuffer buffer = ByteBuffer.wrap(requestData);
         channel.write(buffer);
+        //selector.wakeup();
+        forkJoinPool.submit(() -> {
+            try {
+                console.println(Objects.requireNonNull(getAnswer()).getMessage());
+            } catch (IOException | ClassNotFoundException e) {
+                console.printError("Ошибка при получении ответа");
+            }
+        });
+        //console.println(getAnswer());
+
     }
 
-    public Response getAnswer() throws IOException, ClassNotFoundException {
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
+    public static Response getAnswer() throws IOException, ClassNotFoundException {
+        ByteBuffer buffer = ByteBuffer.allocate(10000);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         channel.configureBlocking(false);
-        //selector.wakeup();
+        selector.wakeup();
         channel.register(selector, SelectionKey.OP_READ);
 
         while (true) {
+            selector.wakeup();
             int readyChannels = selector.select();
             if (readyChannels == 0) continue;
 

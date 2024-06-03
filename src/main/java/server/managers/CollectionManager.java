@@ -187,7 +187,7 @@ public class CollectionManager {
         if (collection.isEmpty()) return "Коллекция пуста";
         StringBuilder info = new StringBuilder();
         for (var route : collection) {
-            info.append(route).append("\n\n");
+            info.append(route).append("\n");
         }
         return info.toString().trim();
     }

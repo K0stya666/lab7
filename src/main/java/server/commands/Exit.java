@@ -17,11 +17,11 @@ public class Exit extends Command  {
      * @return возвращает сообщение об успешности выполнения команды
      */
     @Override
-    public Response execute(Request request){
+    public Response execute(Request request) {
         if (!(request.getArgs().length == 1)){
             return new Response("Неправильное количество аргументов!\nИспользование: '" + getCommandName() + "'");
         }
-        System.exit(1);
+        System.exit(0);
         return new Response("завершение программы");
     }
 

@@ -15,6 +15,7 @@ import java.nio.channels.SocketChannel;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
 
 public class TCPServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(TCPServer.class);
@@ -24,6 +25,7 @@ public class TCPServer {
     private static SocketChannel clientChannel;
     private static Selector selector;
     private final Set<SocketChannel> session;
+    private static final ForkJoinPool forkJoinPool = new ForkJoinPool(10);
 
     public TCPServer(String host, int port, CommandManager commandManager) {
         this.address = new InetSocketAddress(host, port);
@@ -72,7 +74,20 @@ public class TCPServer {
                 keys.remove();
                 if (!key.isValid()) continue;
                 if (key.isAcceptable()) accept(key);
-                else if (key.isReadable()) read(key);
+                else if (key.isReadable()) {
+//                    read(key);
+                    key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+                    forkJoinPool.submit(() -> {
+                        try {
+                            read(key);
+                        } catch (IOException | ClassNotFoundException e) {
+                            LOGGER.error("Ошибка при обработке запроса", e);
+                        } finally {
+                            key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+                            selector.wakeup();
+                        }
+                    });
+                }
             }
         }
     }
@@ -87,9 +102,10 @@ public class TCPServer {
     }
 
     private void read(SelectionKey key) throws IOException, ClassNotFoundException {
+//        new ForkJoinPool(() -> )
         clientChannel = (SocketChannel) key.channel();
         clientChannel.configureBlocking(false);
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        ByteBuffer buffer = ByteBuffer.allocate(10000);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         int bytesRead = clientChannel.read(buffer);
@@ -97,6 +113,11 @@ public class TCPServer {
         if (bytesRead == -1) {
             clientChannel.close();
             LOGGER.info("Пользователь отключился");
+            return;
+        }
+
+        if (bytesRead == 0) {
+            LOGGER.info("Прочитано 0 байт от клиента вы конченый " + clientChannel.getRemoteAddress());
             return;
         }
 
@@ -119,7 +140,15 @@ public class TCPServer {
                 response = new Response("Команда '" + commandName + "' не найдена. Наберите 'help' для справки\n");
             } else { response = command.execute(request); }
 
-            sendAnswer(response, key);
+            //sendAnswer(response, key);
+
+            new Thread(() -> {
+                try {
+                    sendAnswer(response, key);
+                } catch (IOException e) {
+                    LOGGER.error("Ошибка при отправке ответа", e);
+                }
+            }).start();
         } catch (InterruptedException e) {
             LOGGER.error("Ошибка обработки запроса");
         }
@@ -137,5 +166,6 @@ public class TCPServer {
         byte[] responseData = baos.toByteArray();
         ByteBuffer responseBuffer = ByteBuffer.wrap(responseData);
         clientChannel.write(responseBuffer);
+        LOGGER.info("Ответ отправлен клиенту " + clientChannel.getRemoteAddress());
     }
 }

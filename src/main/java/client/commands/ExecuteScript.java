@@ -30,39 +30,46 @@ public class ExecuteScript extends Command {
 
 
     public Response execute(Request scriptRequest) throws IOException, ClassNotFoundException, InterruptedException {
-        var fileName = scriptRequest.getArgs()[1];
-        var file = new File(fileName);
-        var user = scriptRequest.getUser();
+        try {
+            var fileName = scriptRequest.getArgs()[1];
+            var file = new File(fileName);
+            var user = scriptRequest.getUser();
 
-        if (fileName.isEmpty()) {
-            console.println("Неправильное количество аргументов для команды '" + getCommandName() + "'");
-        }
-        if (!file.canRead()) {
-            console.printError("Недостаточно прав для чтения файла '" + fileName + "'");
-        }
-        if (fileStack.isEmpty() || !fileStack.contains(file)) fileStack.add(file);
+//            if (fileName.isEmpty()) {
+//                console.println("Неправильное количество аргументов для команды '" + getCommandName() + "'");
+//            }
+//            if (!file.canRead()) {
+//                console.printError("Недостаточно прав для чтения файла '" + fileName + "'");
+//            }
+            if (fileStack.isEmpty() || !fileStack.contains(file)) fileStack.add(file);
 
-        var br = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8));
+            var br = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8));
 
-        String line;
-        var lines = new String[9];
-        while ((line = br.readLine()) != null) {
-            var args = line.split(" ");
-            var commandName = lines[0];
+            String line;
+            var lines = new String[9];
+            while ((line = br.readLine()) != null) {
+                var args = line.split(" ");
+                var commandName = lines[0];
 
-            Request request;
-            switch (Commands.valueOf(commandName)) {
-                case ADD, UPDATE_BY_ID:
-                    lines = br.lines().toArray(String[]::new);
-                    request = getRequest(user, lines, args);
-                    break;
-                default:
-                    request = new Request(args, user);
-                    break;
+                Request request;
+                switch (Commands.valueOf(commandName)) {
+                    case ADD, UPDATE_BY_ID:
+                        lines = br.lines().toArray(String[]::new);
+                        request = getRequest(user, lines, args);
+                        break;
+                    default:
+                        request = new Request(args, user);
+                        break;
+                }
+                Client.sendRequest(request);
             }
-            Client.sendRequest(request);
+            fileStack.pop();
+            return null;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            console.printError("Кажется кто-то забыл указать название файла");
+        } catch (FileNotFoundException e) {
+            console.printError("Упс, а такого файла не существует. ахахаххахах");
         }
-        fileStack.pop();
         return null;
     }
 

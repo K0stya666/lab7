@@ -23,7 +23,7 @@ public class Help extends Command {
     @Override
     public Response execute(Request request) {
         if (request.getArgs().length != 1) {
-            return new Response("Неправильное количество аргументов!\nИспользование: '\" + getName() + \"'");
+            return new Response("Неправильное количество аргументов!\nИспользование: '" + request.getCommandName() + "'");
         }
 
         StringBuilder result = new StringBuilder();
